@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<table id="dg" title="属性列表" class="easyui-datagrid" style="width:100%;height:100%"
+       data-options="url:'datagrid_data.json',fitColumns:true,singleSelect:true,toolbar:'#tb'">
+    <thead>
+    <tr>
+        <th data-options="field:'id',width:100">编码</th>
+        <th data-options="field:'attrName',width:100">名称</th>
+    </tr>
+    </thead>
+</table>
+
+<div id="tb">
+    <a href="javascript:addAttr();" class="easyui-linkbutton" data-options="iconCls:'icon-add',plain:true">添加</a>
+    <a href="javascript:editAttr();" class="easyui-linkbutton" data-options="iconCls:'icon-edit',plain:true">修改</a>
+    <a href="javascript:deleteAttr();" class="easyui-linkbutton" data-options="iconCls:'icon-remove',plain:true">删除</a>
+    <div>
+        一级分类:<input id="ctg1ForAttrList" class="easyui-combobox" data-options="valueField:'id',textField:'name',url:'getCatalog1',
+                onSelect: function(rec){
+                    var url = 'getCatalog2?catalog1Id='+rec.id;
+                    $('#ctg2ForAttrList').combobox('reload', url);
+                }" />
+
+        二级分类:<input id="ctg2ForAttrList" class="easyui-combobox" data-options="valueField:'id',textField:'name',
+                onSelect: function(rec){
+                    var url = 'getCatalog3?catalog2Id='+rec.id;
+                    $('#ctg3ForAttrList').combobox('reload', url);
+                }" />
+        三级分类:<input id="ctg3ForAttrList" class="easyui-combobox" data-options="valueField:'id',textField:'name'"/>
+
+        <a href="javascript:reloadAttrList();"
+           class="easyui-linkbutton"
+           data-options="iconCls:'icon-search'"
+           style="width: 120px">
+            刷新属性列表
+        </a>
+    </div>
+</div>
+
+<!--引入页面-->
+<div th:include="attrInfoPage"></div>
+
+<SCRIPT language="JavaScript">
+    function reloadAttrList() {
+        <!--获取ctg3ForAttrList的id值-->
+        var ctg3Id = $("#ctg3ForAttrList").combobox("getValue");
+        $("#dg").datagrid({
+            <!--将获取的值刷入页面-->
+            url:"getAttrList?catalog3Id="+ctg3Id
+        });
+    }
+
+    function deleteAttr() {
+        $.messager.confirm('确认','您确认想要删除记录吗？',function(r){
+            if (r){
+                <!--获取ctg3ForAttrList的id值-->
+                var catalog3Id = $("#ctg3ForAttrList").combobox("getValue");
+                if (catalog3Id){
+                    //获取选中的属性信息
+                    var attrDelInfo = $("#dg").datagrid("getSelected");
+                    //初始化信息
+                    $("#dg").datagrid({
+                        <!--将获取的值刷入页面-->
+                        url:"deleteAttrInfo?attrDelInfoId="+attrDelInfo.id
+                    });
+                    //刷新列表
+                    $("#dg").datagrid("reload","getAttrList?catalog3Id="+catalog3Id);
+                    layer.msg("操作成功！", {time:1500, icon:6, shift:6});
+                }else {
+                    // alert("请选择三级分类ID");
+                    // $.messager.alert('我的消息','请选择一个删除！');
+                    layer.msg("请选择一个删除！", {time:1500, icon:5, shift:6});
+                }
+            }
+        });
+    }
+
+    function editAttr() {
+        <!--获取ctg3ForAttrList的id值-->
+        var catalog3Id = $("#ctg3ForAttrList").combobox("getValue");
+        if (catalog3Id){
+            //获取选中的属性信息
+            var attrInfo = $("#dg").datagrid("getSelected");
+            $("#attrName").textbox("setText",attrInfo.attrName);
+            //初始化信息
+            $("#dg_av").datagrid({
+                         <!--将获取的值刷入页面-->
+               url:"getAttrValueList?attrInfoId="+attrInfo.id
+             });
+            //打开编辑窗口
+            $("#dlg").dialog("open");
+            initAttrValueDatagrid(attrInfo);
+        }else {
+            // alert("请选择三级分类ID");
+            layer.msg("请选择三级分类ID！", {time:1500, icon:5, shift:6});
+        }
+    }
+
+    function addAttr() {
+        <!--获取ctg3ForAttrList的id值-->
+        var catalog3Id = $("#ctg3ForAttrList").combobox("getValue");
+       if (catalog3Id){
+           //打开添加窗口
+           $("#dlg").dialog("open");
+           $("#attrName").textbox("setText",[]);
+           $("#dg_av").datagrid('loadData', { total: 0, rows: [] });//行号初始化
+           //初始化信息
+           initAttrValueDatagrid();
+       }else {
+           // alert("请选择三级分类ID");
+           layer.msg("请选择三级分类ID！", {time:1500, icon:5, shift:6});
+       }
+    }
+</SCRIPT>
+</body>
+</html>
